@@ -1,0 +1,578 @@
+-- carregar biblioteca 
+local Fluent = loadstring(game:HttpGet("https://github.com/dawid-scripts/Fluent/releases/latest/download/main.lua"))()
+
+-- HUB
+local Window = Fluent:CreateWindow({
+    Title = "GG prime " .. Fluent.Version,
+    TabWidth = 160, 
+    Size = UDim2.fromOffset(580, 460), 
+    Theme = "Dark"
+})
+
+local MainFrame = Window.Root
+
+-- GUI separada
+local BtnGui = Instance.new("ScreenGui")
+BtnGui.Name = "GG_Button_GUI"
+BtnGui.Parent = game.CoreGui
+BtnGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+BtnGui.ResetOnSpawn = false
+
+-- BOTÃO FLUTUANTE
+local OpenBtn = Instance.new("TextButton")
+OpenBtn.Size = UDim2.new(0, 55, 0, 55)
+OpenBtn.Position = UDim2.new(0, 10, 0, 200)
+OpenBtn.Text = "GG"
+OpenBtn.BackgroundColor3 = Color3.fromRGB(30,30,30)
+OpenBtn.TextColor3 = Color3.fromRGB(255,255,255)
+OpenBtn.Visible = false
+OpenBtn.Parent = BtnGui
+OpenBtn.ZIndex = 999999 
+
+local UICorner = Instance.new("UICorner")
+UICorner.CornerRadius = UDim.new(1,0)
+UICorner.Parent = OpenBtn
+
+-- BOTÃO MINIMIZAR
+local MinBtn = Instance.new("TextButton")
+MinBtn.Size = UDim2.new(0, 40, 0, 40)
+MinBtn.Position = UDim2.new(1, -45, 0, 5)
+MinBtn.Text = "-"
+MinBtn.BackgroundColor3 = Color3.fromRGB(30,30,30)
+MinBtn.TextColor3 = Color3.fromRGB(255,255,255)
+MinBtn.Parent = MainFrame
+
+local UICorner2 = Instance.new("UICorner")
+UICorner2.CornerRadius = UDim.new(0.3,0)
+UICorner2.Parent = MinBtn
+
+-- MINIMIZAR
+MinBtn.MouseButton1Click:Connect(function()
+    MainFrame.Visible = false
+    OpenBtn.Visible = true
+end)
+
+-- ABRIR
+OpenBtn.MouseButton1Click:Connect(function()
+    MainFrame.Visible = true
+    OpenBtn.Visible = false
+end)
+
+-- DEFINIÇÃO DE TODAS AS ABAS
+local Tabs = {
+    Main = Window:AddTab({ Title = "Main" }),
+    ESP = Window:AddTab({ Title = "ESP" }),
+    Assassino = Window:AddTab({ Title = "Assassino" }),
+    Xerife = Window:AddTab({ Title = "Xerife" }),
+    Misc = Window:AddTab({ Title = "Misc" })
+}
+
+-- ==================== ABA MAIN ====================
+Tabs.Main:AddParagraph({ Title = "Main", Content = "Scripts principais e modificadores" })
+
+Tabs.Main:AddButton({ Title = "Infinite Jump", Callback = function() 
+    loadstring(game:HttpGet("https://raw.githubusercontent.com/HeyGyt/infjump/main/main"))()
+end })
+
+local player = game.Players.LocalPlayer
+local autofarm = false
+
+local SETTINGS = {
+    TeleportDelay = 0.35, 
+    LoopPause = 1.2,      
+    MaxCoins = 12         
+}
+
+local function getRoot()
+    local char = player.Character or player.CharacterAdded:Wait()
+    return char:WaitForChild("HumanoidRootPart")
+end
+
+local function farmCoins()
+    while autofarm do
+        pcall(function()
+            local root = getRoot()
+            local count = 0
+
+            for _, coin in pairs(workspace:GetDescendants()) do
+                if not autofarm then break end
+
+                if coin.Name == "Coin" or coin.Name == "Coin_Server" then
+                    if coin:IsA("BasePart") then
+                        root.CFrame = coin.CFrame + Vector3.new(0,2,0)
+                        count += 1
+                        task.wait(SETTINGS.TeleportDelay)
+
+                        if count >= SETTINGS.MaxCoins then
+                            break
+                        end
+                    end
+                end
+            end
+        end)
+        task.wait(SETTINGS.LoopPause)
+    end
+end
+
+Tabs.Main:AddToggle("autofarm", {
+    Title = "Auto Farm (Delay Seguro)", 
+    Description = "Com delay e pausa anti-kick",
+    Default = false,
+    Callback = function(state)
+        autofarm = state
+        if state then
+            Fluent:Notify({ Title = "Autofarm ligado", Content = "Delay ativo (modo seguro)" })
+            task.spawn(farmCoins)
+        else
+            Fluent:Notify({ Title = "Autofarm desligado", Content = "Parado" })
+        end
+    end 
+})
+
+local RunService = game:GetService("RunService")
+local speedOn = false
+local SPEED = 50 
+
+local function getHumanoid()
+    local char = player.Character or player.CharacterAdded:Wait()
+    return char:WaitForChild("Humanoid")
+end
+
+RunService.RenderStepped:Connect(function()
+    if speedOn then
+        local humanoid = getHumanoid()
+        if humanoid and humanoid.WalkSpeed ~= SPEED then
+            humanoid.WalkSpeed = SPEED
+        end
+    end
+end)
+
+Tabs.Main:AddToggle("speed boost", {
+    Title = "Speed Boost",
+    Description = "Aumenta velocidade (MM2)",
+    Default = false,
+    Callback = function(state)
+        speedOn = state
+        if state then
+            Fluent:Notify({ Title = "Speed Boost ligado", Content = "Velocidade aumentada" })
+        else
+            local humanoid = getHumanoid()
+            humanoid.WalkSpeed = 16
+            Fluent:Notify({ Title = "Speed Boost desligado", Content = "Velocidade normal" })
+        end
+    end
+})
+
+Tabs.Main:AddSlider("pulo", {
+    Title = "Força do Pulo",
+    Description = "Ajusta a altura do pulo do jogador",
+    Default = 50, Min = 20, Max = 150, Rounding = 0,
+    Callback = function(Value)
+        getHumanoid().JumpPower = Value
+    end
+})
+
+Tabs.Main:AddSlider("velocidade", {
+    Title = "Velocidade",
+    Description = "Ajusta a velocidade do jogador",
+    Default = 16, Min = 16, Max = 200, Rounding = 0,
+    Callback = function(Value)
+        getHumanoid().WalkSpeed = Value
+    end
+})
+
+-- ==================== ABA ESP ====================
+Tabs.ESP:AddParagraph({ Title = "ESP", Content = "Rastreamento visível de funções" })
+
+local Players = game:GetService("Players")
+local espMurder, espSheriff, espInnocent, espHero, espGun = false, false, false, false, false
+
+local sheriffOriginal = nil
+task.spawn(function()
+    while true do
+        for _, p in pairs(Players:GetPlayers()) do
+            if p ~= player and p.Backpack:FindFirstChild("Gun") then sheriffOriginal = p end
+        end
+        task.wait(2)
+    end
+end)
+
+RunService.RenderStepped:Connect(function()
+    for _, p in pairs(Players:GetPlayers()) do
+        if p ~= player and p.Character then
+            local char = p.Character
+            local color = nil
+            local habilitado = false
+            
+            if espMurder and (char:FindFirstChild("Knife") or p.Backpack:FindFirstChild("Knife")) then
+                color = Color3.fromRGB(255, 0, 0)
+                habilitado = true
+            elseif espSheriff and (char:FindFirstChild("Gun") or p.Backpack:FindFirstChild("Gun")) and p == sheriffOriginal then
+                color = Color3.fromRGB(0, 0, 255)
+                habilitado = true
+            elseif espHero and (char:FindFirstChild("Gun") or p.Backpack:FindFirstChild("Gun")) and p ~= sheriffOriginal then
+                color = Color3.fromRGB(255, 255, 0)
+                habilitado = true
+            elseif espInnocent and not (char:FindFirstChild("Knife") or p.Backpack:FindFirstChild("Knife") or char:FindFirstChild("Gun") or p.Backpack:FindFirstChild("Gun")) then
+                color = Color3.fromRGB(0, 255, 0)
+                habilitado = true
+            end
+
+            local hl = char:FindFirstChild("GG_ESP")
+            if habilitado and color then
+                if not hl then
+                    hl = Instance.new("Highlight")
+                    hl.Name = "GG_ESP"
+                    hl.OutlineColor = Color3.fromRGB(255, 255, 255)
+                    hl.FillTransparency = 0.4
+                    hl.Parent = char
+                end
+                hl.FillColor = color
+                hl.Enabled = true
+            else
+                if hl then hl.Enabled = false end
+            end
+        end
+    end
+
+    if espGun then
+        for _, obj in pairs(workspace:GetDescendants()) do
+            if obj.Name == "GunDrop" or obj.Name == "Gun" then
+                if obj:IsA("Part") or obj:IsA("Model") then
+                    local hl = obj:FindFirstChild("GG_GunESP")
+                    if not hl then
+                        hl = Instance.new("Highlight")
+                        hl.Name = "GG_GunESP"
+                        hl.FillColor = Color3.fromRGB(255, 255, 0)
+                        hl.OutlineColor = Color3.fromRGB(255, 255, 255)
+                        hl.FillTransparency = 0.2
+                        hl.Parent = obj
+                    end
+                    hl.Enabled = true
+                end
+            end
+        end
+    else
+        for _, obj in pairs(workspace:GetDescendants()) do
+            if obj.Name == "GunDrop" or obj.Name == "Gun" then
+                local hl = obj:FindFirstChild("GG_GunESP")
+                if hl then hl.Enabled = false end
+            end
+        end
+    end
+end)
+
+Tabs.ESP:AddToggle("ESP murder", { Title = "ESP Murder", Description = "Assassino fica vermelho", Default = false, Callback = function(s) espMurder = s end })
+Tabs.ESP:AddToggle("ESP sheriff", { Title = "ESP Sheriff", Description = "Xerife fica azul", Default = false, Callback = function(s) espSheriff = s end })
+Tabs.ESP:AddToggle("ESP inocente", { Title = "ESP Inocente", Description = "Inocentes ficam verdes", Default = false, Callback = function(s) espInnocent = s end })
+Tabs.ESP:AddToggle("ESP heroi", { Title = "ESP Herói", Description = "Quem pega a arma fica amarelo", Default = false, Callback = function(s) espHero = s end })
+Tabs.ESP:AddToggle("ESP gun", { Title = "ESP Gun", Description = "Mostra arma dropada", Default = false, Callback = function(s) espGun = s end })
+
+-- ==================== ABA ASSASSINO ====================
+local killAll = false
+Tabs.Assassino:AddToggle("kill all", {
+    Title = "Kill All", Description = "Teleporta e elimina todos", Default = false,
+    Callback = function(state)
+        killAll = state
+        if state then
+            task.spawn(function()
+                while killAll do
+                    for _, p in pairs(Players:GetPlayers()) do
+                        if p ~= player and p.Character and p.Character:FindFirstChild("HumanoidRootPart") then
+                            local char = player.Character
+                            if char and char:FindFirstChild("HumanoidRootPart") then
+                                char.HumanoidRootPart.CFrame = p.Character.HumanoidRootPart.CFrame + Vector3.new(0,0,2)
+                                for _, t in pairs(player.Backpack:GetChildren()) do if t:IsA("Tool") then t.Parent = char end end
+                                local tool = char:FindFirstChildOfClass("Tool")
+                                if tool then tool:Activate() end
+                                task.wait(0.3)
+                            end
+                        end
+                    end
+                    task.wait(0.5)
+                end
+            end)
+        end
+    end 
+})
+
+local auraOn = false
+local RANGE = 15
+RunService.RenderStepped:Connect(function()
+    if not auraOn then return end
+    local char = player.Character or player.CharacterAdded:Wait()
+    local root = char:FindFirstChild("HumanoidRootPart")
+    local tool = char:FindFirstChildOfClass("Tool")
+    if not root or not tool then return end
+
+    for _, p in pairs(Players:GetPlayers()) do
+        if p ~= player and p.Character then
+            local targetRoot = p.Character:FindFirstChild("HumanoidRootPart")
+            if targetRoot and (root.Position - targetRoot.Position).Magnitude <= RANGE then
+                root.CFrame = targetRoot.CFrame * CFrame.new(0,0,2)
+                tool:Activate()
+                task.wait(0.1)
+            end
+        end
+    end
+end)
+
+Tabs.Assassino:AddToggle("kill aura", { Title = "Kill Aura", Description = "Mata próximos automaticamente", Default = false, Callback = function(s) auraOn = s end })
+
+-- ==================== ABA XERIFE ====================
+local aiming, holding, aimConnection = false, false, nil
+local FOV, SMOOTH, PREDICTION = 120, 0.15, 0.12
+local camera = workspace.CurrentCamera
+
+local circle = Drawing.new("Circle")
+circle.Visible = false; circle.Color = Color3.fromRGB(255,255,255); circle.Thickness = 1; circle.NumSides = 100; circle.Radius = FOV; circle.Filled = false
+
+RunService.RenderStepped:Connect(function() circle.Position = Vector2.new(camera.ViewportSize.X/2, camera.ViewportSize.Y/2) end)
+game:GetService("UserInputService").InputBegan:Connect(function(i) if i.UserInputType == Enum.UserInputType.Touch then holding = true end end)
+game:GetService("UserInputService").InputEnded:Connect(function(i) if i.UserInputType == Enum.UserInputType.Touch then holding = false end end)
+
+local function getTarget()
+    local closest, shortest = nil, math.huge
+    for _, v in pairs(Players:GetPlayers()) do
+        if v ~= player and v.Character and v.Character:FindFirstChild("Head") then
+            local pos, onScreen = camera:WorldToViewportPoint(v.Character.Head.Position)
+            if onScreen then
+                local dist = (Vector2.new(pos.X, pos.Y) - circle.Position).Magnitude
+                if dist < FOV and dist < shortest then shortest = dist; closest = v end
+            end
+        end
+    end
+    return closest
+end
+
+Tabs.Xerife:AddToggle("aim legit", {
+    Title = "Aim Legit Pro+", Description = "Aim com FOV + Smooth + Predição", Default = false,
+    Callback = function(state)
+        aiming = state; circle.Visible = state
+        if state then
+            aimConnection = RunService.RenderStepped:Connect(function()
+                if aiming and holding then
+                    local t = getTarget()
+                    if t and t.Character and t.Character:FindFirstChild("Head") and t.Character:FindFirstChild("HumanoidRootPart") then
+                        local velocity = t.Character.HumanoidRootPart.Velocity
+                        local predPos = t.Character.Head.Position + (velocity * PREDICTION)
+                        camera.CFrame = camera.CFrame:Lerp(CFrame.new(camera.CFrame.Position, predPos), SMOOTH)
+                    end
+                end
+            end)
+        else
+            if aimConnection then aimConnection:Disconnect(); aimConnection = nil end
+        end
+    end 
+})
+
+-- ==================== ABA MISC + FLINGS ====================
+local noclipConnection = nil
+Tabs.Misc:AddToggle("noclip", {
+    Title = "Noclip", Description = "Atravessa paredes", Default = false,
+    Callback = function(state)
+        if state then
+            noclipConnection = RunService.Stepped:Connect(function()
+                if player.Character then
+                    for _, p in pairs(player.Character:GetChildren()) do if p:IsA("BasePart") then p.CanCollide = false end end
+                end
+            end)
+        else
+            if noclipConnection then noclipConnection:Disconnect(); noclipConnection = nil end
+        end
+    end
+})
+
+Tabs.Misc:AddParagraph({ Title = "Sistemas de Fling", Content = "Método: Predição Física Destrutiva com Retorno ao Ponto Inicial" })
+
+-- FUNÇÃO FLING COM RETORNO PARA A POSIÇÃO ORIGINAL DE ATIVAÇÃO
+local function executarFling(alvo)
+    if not alvo or not alvo.Character then return end
+
+    local char = player.Character or player.CharacterAdded:Wait()
+    local hrp = char:FindFirstChild("HumanoidRootPart")
+    if not hrp then return end
+
+    -- 🌟 CHAVE DO FIX: Salva o local exato onde você estava antes de iniciar o ataque
+    local posicaoOriginal = hrp.CFrame
+    local startTime = tick()
+
+    -- Força colisão massiva e física no início
+    for _, part in ipairs(char:GetDescendants()) do
+        if part:IsA("BasePart") then
+            part.CanCollide = true
+            part.Massless = false
+        end
+    end
+
+    local conn
+    conn = RunService.Heartbeat:Connect(function()
+        if not alvo or not alvo.Character then return end
+        if not hrp or not hrp.Parent then return end
+
+        local targetChar = alvo.Character
+        local torso = targetChar:FindFirstChild("UpperTorso") 
+            or targetChar:FindFirstChild("Torso") 
+            or targetChar:FindFirstChild("HumanoidRootPart")
+
+        if not torso then return end
+
+        -- Força a engine física a registrar colisão rígida em tempo real
+        for _, part in ipairs(char:GetDescendants()) do
+            if part:IsA("BasePart") then
+                part.CanCollide = true
+                part.Massless = false
+            end
+        end
+
+        for _, part in ipairs(targetChar:GetDescendants()) do
+            if part:IsA("BasePart") then
+                part.CanCollide = true
+                part.Massless = false
+            end
+        end
+
+        -- Cálculos de Predição e CFrame com micro-offsets caóticos
+        local velocity = torso.AssemblyLinearVelocity
+        local predict = velocity * 0.09
+
+        local dist = (hrp.Position - torso.Position).Magnitude
+        local offset = dist > 5 and 0.15 or 0.35
+
+        hrp.CFrame = CFrame.new(torso.Position + predict)
+            * CFrame.Angles(
+                math.rad(math.random(-360,360)),
+                math.rad(math.random(-360,360)),
+                math.rad(math.random(-360,360))
+            )
+            * CFrame.new(
+                math.random(-offset, offset),
+                math.random(0, 1.2),
+                math.random(-offset, offset)
+            )
+
+        -- ESCALONAMENTO DE FORÇA BRUTA (Para isolar o alvo do mapa)
+        local force = dist > 6 and 850 or 1200
+
+        hrp.AssemblyLinearVelocity = velocity + Vector3.new(
+            math.random(-force, force),
+            force * 2.5, -- Multiplicador vertical violento para arremessar por cima das barreiras do mapa
+            math.random(-force, force)
+        )
+
+        -- AJUSTE DE ROTAÇÃO SOLICITADO: Travado estritamente em 8350 no eixo de torque principal
+        hrp.AssemblyAngularVelocity = Vector3.new(
+            math.random(-4500, 4500),
+            8350, 
+            math.random(-4500, 4500)
+        )
+    end)
+
+    -- Mantém o loop destrutivo por 1.85 segundos
+    while tick() - startTime < 1.85 do
+        task.wait()
+    end
+
+    if conn then
+        conn:Disconnect()
+    end
+
+    -- Limpa as velocidades angulares residuais imediatamente
+    hrp.AssemblyLinearVelocity = Vector3.zero
+    hrp.AssemblyAngularVelocity = Vector3.zero
+
+    task.wait(0.1)
+
+    -- ⚡ LÓGICA DO RETORNO DE 2MS ATUALIZADA (Volta para onde você ativou o comando)
+    -- Primeiro Teleporte de Retorno
+    hrp.CFrame = posicaoOriginal
+    hrp.AssemblyLinearVelocity = Vector3.zero
+    hrp.AssemblyAngularVelocity = Vector3.zero
+    
+    task.wait(0.002) -- Espera precisa de 2 milissegundos aplicada aqui
+    
+    -- Segundo Teleporte de Estabilização Completa no ponto de origem
+    hrp.CFrame = posicaoOriginal
+    hrp.AssemblyLinearVelocity = Vector3.zero
+    hrp.AssemblyAngularVelocity = Vector3.zero
+
+    Fluent:Notify({ Title = "Super Fling Concluído", Content = "Alvo arremessado! Você retornou ao seu local original de partida." })
+end
+
+-- 1. FLING ASSASSINO
+Tabs.Misc:AddButton({
+    Title = "Fling Assassino",
+    Description = "Procura e elimina o Murder da partida",
+    Callback = function()
+        local target = nil
+        for _, p in pairs(Players:GetPlayers()) do
+            if p ~= player and p.Character and (p.Character:FindFirstChild("Knife") or p.Backpack:FindFirstChild("Knife")) then
+                target = p
+                break
+            end
+        end
+        if target then
+            executarFling(target)
+        else
+            Fluent:Notify({ Title = "Aviso", Content = "O Assassino não foi detectado com a faca em mãos." })
+        end
+    end
+})
+
+-- 2. FLING XERIFE
+Tabs.Misc:AddButton({
+    Title = "Fling Xerife",
+    Description = "Procura e elimina o Xerife/Herói com a arma",
+    Callback = function()
+        local target = nil
+        for _, p in pairs(Players:GetPlayers()) do
+            if p ~= player and p.Character and (p.Character:FindFirstChild("Gun") or p.Backpack:FindFirstChild("Gun")) then
+                target = p
+                break
+            end
+        end
+        if target then
+            executarFling(target)
+        else
+            Fluent:Notify({ Title = "Aviso", Content = "Nenhum portador de Arma (Xerife/Herói) encontrado." })
+        end
+    end
+})
+
+-- 3. FLING SELECT
+local jogadorSelecionado = ""
+local Dropdown = Tabs.Misc:AddDropdown("FlingSelect", {
+    Title = "Selecionar Jogador (Fling)",
+    Values = {},
+    Multi = false,
+    Default = "",
+    Callback = function(Value)
+        jogadorSelecionado = Value
+    end
+})
+
+-- Loop de preenchimento automático de jogadores no Dropdown
+task.spawn(function()
+    while true do
+        local lista = {}
+        for _, p in pairs(Players:GetPlayers()) do
+            if p ~= player then table.insert(lista, p.Name) end
+        end
+        Dropdown:SetValues(lista)
+        task.wait(3)
+    end
+end)
+
+Tabs.Misc:AddButton({
+    Title = "Executar Fling Select",
+    Description = "Aplica o fling no jogador selecionado no menu acima",
+    Callback = function()
+        if jogadorSelecionado ~= "" then
+            local target = Players:FindFirstChild(jogadorSelecionado)
+            if target then executarFling(target) end
+        else
+            Fluent:Notify({ Title = "Aviso", Content = "Por favor, selecione um jogador primeiro." })
+        end
+    end
+})
+
